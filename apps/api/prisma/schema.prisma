@@ -1,0 +1,98 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(uuid())
+  username      String         @unique
+  password      String
+  email         String?        @unique
+  phoneNumber   String?        @unique
+  isActive      Boolean        @default(true)
+  role          Role          @default(USER)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  activationCode ActivationCode?
+  transactions  Transaction[]
+  budgets       Budget[]
+  whatsappSessions WhatsAppSession[]
+}
+
+model ActivationCode {
+  id            String    @id @default(uuid())
+  code          String    @unique
+  userId        String    @unique
+  user          User      @relation(fields: [userId], references: [id])
+  expiresAt     DateTime
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Transaction {
+  id            String    @id @default(uuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+  type          TransactionType
+  amount        Float
+  category      String
+  description   String?
+  date          DateTime  @default(now())
+  source        String    @default("manual") // manual, whatsapp, web
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Budget {
+  id            String    @id @default(uuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+  category      String
+  amount        Float
+  period        Period    @default(MONTHLY)
+  startDate     DateTime
+  endDate       DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model WhatsAppSession {
+  id            String    @id @default(uuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+  sessionData   String    // Encrypted session data
+  isActive      Boolean   @default(true)
+  lastActive    DateTime  @default(now())
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model AdminSettings {
+  id            String    @id @default(uuid())
+  key           String    @unique
+  value         String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+enum Period {
+  DAILY
+  WEEKLY
+  MONTHLY
+  YEARLY
+}
