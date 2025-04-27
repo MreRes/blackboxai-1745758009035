@@ -1,0 +1,189 @@
+{
+  "general": {
+    "logDirectory": "/redis/logs",
+    "testTimeout": 3600,
+    "cleanupEnabled": true,
+    "reportFormat": "json",
+    "exitOnFailure": true,
+    "parallelTests": false
+  },
+  "redis": {
+    "host": "localhost",
+    "port": 6379,
+    "password": "${REDIS_PASSWORD}",
+    "database": 0,
+    "connectionTimeout": 5000,
+    "maxRetries": 3,
+    "retryDelay": 1000
+  },
+  "basicTests": {
+    "enabled": true,
+    "timeout": 300,
+    "dataTypes": [
+      "string",
+      "hash",
+      "list",
+      "set",
+      "zset"
+    ],
+    "dataSize": {
+      "small": 100,
+      "medium": 1000,
+      "large": 10000
+    },
+    "keyPatterns": [
+      "test:*",
+      "temp:*",
+      "cache:*"
+    ]
+  },
+  "benchmarkTests": {
+    "enabled": true,
+    "timeout": 600,
+    "iterations": 3,
+    "clients": [50, 100, 200],
+    "requests": 100000,
+    "dataSize": {
+      "small": 256,
+      "medium": 1024,
+      "large": 4096
+    },
+    "operations": [
+      "SET",
+      "GET",
+      "HSET",
+      "HGET",
+      "LPUSH",
+      "RPOP",
+      "ZADD",
+      "ZRANGE"
+    ],
+    "pipelineSize": [1, 10, 50, 100]
+  },
+  "stressTests": {
+    "enabled": true,
+    "timeout": 1800,
+    "maxClients": 1000,
+    "rampUpTime": 60,
+    "duration": 300,
+    "dataSize": {
+      "small": 100,
+      "medium": 1000,
+      "large": 10000
+    },
+    "ratios": {
+      "read": 0.7,
+      "write": 0.3
+    },
+    "thresholds": {
+      "memory": 80,
+      "cpu": 90,
+      "errors": 100,
+      "latency": 100
+    }
+  },
+  "monitoring": {
+    "enabled": true,
+    "interval": 5,
+    "metrics": [
+      "connected_clients",
+      "used_memory",
+      "used_memory_peak",
+      "total_commands_processed",
+      "keyspace_hits",
+      "keyspace_misses",
+      "rejected_connections",
+      "sync_full",
+      "sync_partial_ok",
+      "sync_partial_err",
+      "instantaneous_ops_per_sec",
+      "instantaneous_input_kbps",
+      "instantaneous_output_kbps",
+      "blocked_clients",
+      "expired_keys",
+      "evicted_keys",
+      "total_net_input_bytes",
+      "total_net_output_bytes"
+    ]
+  },
+  "reporting": {
+    "enabled": true,
+    "formats": ["json", "html", "text"],
+    "metrics": {
+      "performance": {
+        "throughput": true,
+        "latency": true,
+        "memory": true,
+        "cpu": true
+      },
+      "errors": {
+        "connection": true,
+        "timeout": true,
+        "validation": true
+      },
+      "statistics": {
+        "commands": true,
+        "keys": true,
+        "memory": true,
+        "clients": true
+      }
+    },
+    "notifications": {
+      "email": {
+        "enabled": false,
+        "recipients": ["admin@example.com"],
+        "onFailure": true,
+        "onSuccess": false
+      },
+      "slack": {
+        "enabled": false,
+        "webhook": "",
+        "channel": "#redis-tests",
+        "onFailure": true,
+        "onSuccess": true
+      }
+    }
+  },
+  "cleanup": {
+    "enabled": true,
+    "patterns": [
+      "test:*",
+      "bench:*",
+      "stress:*"
+    ],
+    "backupRetention": {
+      "days": 7,
+      "minCount": 3,
+      "maxSize": "1GB"
+    },
+    "logRetention": {
+      "days": 30,
+      "compress": true
+    }
+  },
+  "security": {
+    "validatePasswords": true,
+    "minPasswordLength": 8,
+    "requireComplexity": true,
+    "maxLoginAttempts": 3,
+    "lockoutDuration": 300,
+    "allowedIPs": ["127.0.0.1"],
+    "sslEnabled": false,
+    "sslCertPath": "",
+    "sslKeyPath": ""
+  },
+  "recovery": {
+    "enabled": true,
+    "maxAttempts": 3,
+    "backoff": {
+      "initial": 1000,
+      "factor": 2,
+      "maxDelay": 10000
+    },
+    "actions": {
+      "reconnect": true,
+      "replication": true,
+      "persistence": true
+    }
+  }
+}
