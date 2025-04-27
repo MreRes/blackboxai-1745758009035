@@ -1,0 +1,176 @@
+# Redis Exporter Configuration
+
+# Basic settings
+redis.addr: "redis://localhost:6379"
+redis.password: "${REDIS_PASSWORD}"
+web.listen-address: "0.0.0.0:9121"
+web.telemetry-path: "/metrics"
+
+# Debug mode (set to true for development)
+debug: false
+
+# Include system metrics
+include-system-metrics: true
+
+# Redis connection settings
+redis.connection-timeout: 15s
+redis.dial-timeout: 5s
+
+# TLS configuration (if needed)
+# tls.client-cert-file: "/path/to/client.crt"
+# tls.client-key-file: "/path/to/client.key"
+# tls.ca-cert-file: "/path/to/ca.crt"
+# tls.insecure-skip-verify: false
+
+# Authentication
+namespace: "redis"
+check-keys: "*"
+check-single-keys: ""
+check-streams: ""
+
+# Metric configuration
+is-tile38: false
+export-client-list: true
+redis-only-metrics: false
+ping-on-connect: true
+
+# Script configuration
+script: |
+  return redis.call('INFO')
+
+# Custom key patterns to export key lengths
+count-keys: |
+  - pattern: "*"
+    label: "all_keys"
+  - pattern: "cache:*"
+    label: "cache_keys"
+  - pattern: "session:*"
+    label: "session_keys"
+  - pattern: "metrics:*"
+    label: "metrics_keys"
+
+# Custom key patterns to export key values
+check-key-groups: |
+  - pattern: "metrics:*"
+    label: "metrics"
+  - pattern: "status:*"
+    label: "status"
+
+# Metric labels
+static-labels:
+  environment: "${NODE_ENV:-production}"
+  service: "financial-bot"
+  instance: "${HOSTNAME}"
+
+# Configure which Redis INFO fields to export
+export-info-fields: |
+  - server
+  - clients
+  - memory
+  - persistence
+  - stats
+  - replication
+  - cpu
+  - commandstats
+  - cluster
+  - keyspace
+
+# Configure which commands to track
+track-commands: |
+  - get
+  - set
+  - del
+  - hget
+  - hset
+  - hdel
+  - lpush
+  - rpush
+  - lpop
+  - rpop
+  - zadd
+  - zrem
+  - sadd
+  - srem
+
+# Scrape configuration
+scrape-timeout: 10s
+scrape-interval: 10s
+
+# Logging configuration
+log-format: "json"
+log-level: "info"
+
+# Redis cluster configuration
+redis.cluster-mode: false
+# redis.cluster-nodes: "node1:6379,node2:6379,node3:6379"
+
+# Connection pool configuration
+redis.pool-size: 10
+redis.max-retries: 3
+redis.min-retry-delay: 1s
+redis.max-retry-delay: 5s
+
+# Metric customization
+metric-descriptions:
+  redis_connected_clients:
+    help: "Number of client connections (excluding connections from replicas)"
+    type: "gauge"
+  redis_memory_used_bytes:
+    help: "Total number of bytes allocated by Redis using its allocator"
+    type: "gauge"
+  redis_commands_total:
+    help: "Total number of commands processed by Redis"
+    type: "counter"
+  redis_keyspace_hits_total:
+    help: "Number of successful lookups of keys in the main dictionary"
+    type: "counter"
+  redis_keyspace_misses_total:
+    help: "Number of failed lookups of keys in the main dictionary"
+    type: "counter"
+
+# Alert rules (these will be used by Prometheus)
+rules:
+  - alert: RedisDown
+    expr: redis_up == 0
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Redis instance is down"
+      description: "Redis instance has been down for more than 1 minute"
+
+  - alert: RedisHighMemoryUsage
+    expr: redis_memory_used_bytes / redis_memory_max_bytes * 100 > 80
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Redis high memory usage"
+      description: "Redis memory usage is above 80% for more than 5 minutes"
+
+  - alert: RedisHighConnectionCount
+    expr: redis_connected_clients > 1000
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Redis high connection count"
+      description: "Redis has more than 1000 connections for more than 5 minutes"
+
+  - alert: RedisRejectedConnections
+    expr: rate(redis_rejected_connections_total[5m]) > 0
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Redis is rejecting connections"
+      description: "Redis is rejecting connections due to maxclients limit"
+
+  - alert: RedisSlowLogs
+    expr: rate(redis_slowlog_length[5m]) > 0
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Redis has slow operations"
+      description: "Redis is experiencing slow operations"
