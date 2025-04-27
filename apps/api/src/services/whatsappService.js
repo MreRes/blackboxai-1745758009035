@@ -3,6 +3,7 @@ const qrcode = require('qrcode');
 const { PrismaClient } = require('@prisma/client');
 const { createLogger } = require('../utils/logger');
 const { NlpManager } = require('node-nlp');
+const terminalImage = require('terminal-image');
 
 const prisma = new PrismaClient();
 const logger = createLogger('whatsapp-service');
@@ -46,8 +47,11 @@ class WhatsAppService {
     this.client.on('qr', async (qr) => {
       // Generate QR code
       const qrImage = await qrcode.toDataURL(qr);
-      // Store QR code or emit event
-      logger.info('New QR code generated');
+      // Display QR code in terminal
+      const imageBuffer = Buffer.from(qrImage.split(',')[1], 'base64');
+      const terminalQr = await terminalImage.buffer(imageBuffer, {width: '50%', height: '50%'});
+      console.log(terminalQr);
+      logger.info('New QR code generated and displayed in terminal');
     });
 
     this.client.on('ready', () => {
