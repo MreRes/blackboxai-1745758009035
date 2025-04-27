@@ -1,0 +1,184 @@
+# Redis configuration template
+# This template will be processed by the initialization script
+
+################################## NETWORK #####################################
+
+# Listen on all available network interfaces
+bind 0.0.0.0
+
+# Port to listen on
+port 6379
+
+# TCP listen() backlog
+tcp-backlog 511
+
+# Close connection after N seconds of idle time
+timeout 0
+
+# TCP keepalive
+tcp-keepalive 300
+
+# Maximum number of clients
+maxclients ${REDIS_MAXCLIENTS:-10000}
+
+################################## SECURITY ###################################
+
+# Require authentication
+requirepass ${REDIS_PASSWORD}
+
+# Rename dangerous commands
+rename-command FLUSHDB ""
+rename-command FLUSHALL ""
+rename-command DEBUG ""
+rename-command CONFIG ""
+
+################################## MEMORY ####################################
+
+# Maximum memory
+maxmemory ${REDIS_MAXMEMORY:-2gb}
+
+# Memory policy
+maxmemory-policy ${REDIS_MAXMEMORY_POLICY:-allkeys-lru}
+
+# Memory samples
+maxmemory-samples 5
+
+# Active defragmentation
+activedefrag yes
+active-defrag-ignore-bytes 100mb
+active-defrag-threshold-lower 10
+active-defrag-threshold-upper 100
+active-defrag-cycle-min 5
+active-defrag-cycle-max 75
+
+################################## PERSISTENCE ###############################
+
+# RDB persistence
+save 900 1
+save 300 10
+save 60 10000
+
+# RDB filename
+dbfilename dump.rdb
+
+# RDB compression
+rdbcompression yes
+
+# RDB checksum
+rdbchecksum yes
+
+# AOF persistence
+appendonly ${REDIS_APPENDONLY:-yes}
+appendfilename "appendonly.aof"
+appendfsync ${REDIS_APPENDFSYNC:-everysec}
+
+# AOF rewrite
+auto-aof-rewrite-percentage 100
+auto-aof-rewrite-min-size 64mb
+
+################################## REPLICATION ###############################
+
+# Replica configuration (if enabled)
+replica-serve-stale-data yes
+replica-read-only yes
+repl-diskless-sync no
+repl-diskless-sync-delay 5
+repl-disable-tcp-nodelay no
+
+################################## SLOW LOG #################################
+
+# Slow log configuration
+slowlog-log-slower-than 10000
+slowlog-max-len 128
+
+################################## LATENCY MONITOR ##########################
+
+# Latency monitoring
+latency-monitor-threshold 100
+
+################################## EVENT NOTIFICATION #######################
+
+# Keyspace events notification
+notify-keyspace-events "Ex"
+
+################################## ADVANCED CONFIG ##########################
+
+# Hash table configuration
+hash-max-ziplist-entries 512
+hash-max-ziplist-value 64
+
+# List configuration
+list-max-ziplist-size -2
+list-compress-depth 0
+
+# Set configuration
+set-max-intset-entries 512
+
+# Sorted set configuration
+zset-max-ziplist-entries 128
+zset-max-ziplist-value 64
+
+# HyperLogLog configuration
+hll-sparse-max-bytes 3000
+
+# Streams configuration
+stream-node-max-bytes 4096
+stream-node-max-entries 100
+
+################################## CLIENTS #################################
+
+# Client output buffer limits
+client-output-buffer-limit normal 0 0 0
+client-output-buffer-limit replica 256mb 64mb 60
+client-output-buffer-limit pubsub 32mb 8mb 60
+
+################################## KERNEL ################################
+
+# Overcommit memory
+vm.overcommit_memory 1
+
+# TCP backlog
+net.core.somaxconn 512
+
+################################## LOGGING ###############################
+
+# Logging configuration
+loglevel notice
+logfile "/redis/logs/redis.log"
+
+# Syslog configuration
+syslog-enabled yes
+syslog-ident redis
+syslog-facility local0
+
+################################# METRICS ################################
+
+# Metrics configuration
+latency-monitor-threshold 100
+aof-use-rdb-preamble yes
+
+################################# TLS/SSL ###############################
+
+# TLS/SSL configuration (if enabled)
+# tls-port 6380
+# tls-cert-file /path/to/redis.crt
+# tls-key-file /path/to/redis.key
+# tls-ca-cert-file /path/to/ca.crt
+# tls-auth-clients yes
+# tls-replication yes
+# tls-cluster yes
+# tls-protocols "TLSv1.2 TLSv1.3"
+
+################################# MODULES ##############################
+
+# Load modules at startup
+# loadmodule /path/to/my_module.so
+
+################################# INCLUDES ############################
+
+# Include other configuration files
+# include /path/to/local.conf
+
+################################# FINAL ###############################
+
+# Additional custom settings can be added below
