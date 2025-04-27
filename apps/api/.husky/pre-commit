@@ -1,0 +1,32 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Run lint-staged
+npx lint-staged
+
+# Run tests
+npm run test:unit
+
+# Check test coverage
+npm run test:coverage
+
+# Ensure no debug statements are committed
+if grep -r "console.log" ./src; then
+  echo "Error: console.log statements found in src directory"
+  exit 1
+fi
+
+# Check for sensitive data
+if grep -r "password\|secret\|key" ./src --exclude-dir={node_modules,dist,coverage}; then
+  echo "Warning: Potential sensitive data found in source files"
+  exit 1
+fi
+
+# Validate package.json
+npm run format
+
+# Run security audit
+npm audit
+
+# Check for TypeScript errors
+npx tsc --noEmit
