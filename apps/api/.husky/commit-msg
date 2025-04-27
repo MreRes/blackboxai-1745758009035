@@ -1,0 +1,22 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Validate commit message format
+npx --no -- commitlint --edit ${1}
+
+# Check commit message length
+if [ $(cat ${1} | wc -c) -gt 100 ]; then
+  echo "Commit message is too long (max 100 characters)"
+  exit 1
+fi
+
+# Check for conventional commit format
+commit_msg=$(cat ${1})
+if ! echo "$commit_msg" | grep -qE "^(feat|fix|docs|style|refactor|test|chore)(\([a-z]+\))?: .+$"; then
+  echo "Invalid commit message format. Please use conventional commits:"
+  echo "type(scope): description"
+  echo ""
+  echo "Types: feat, fix, docs, style, refactor, test, chore"
+  echo "Example: feat(auth): add user registration"
+  exit 1
+fi
