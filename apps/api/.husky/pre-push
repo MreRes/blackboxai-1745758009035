@@ -1,0 +1,30 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Run full test suite
+npm run test:ci
+
+# Check test coverage thresholds
+if ! npm run test:coverage; then
+  echo "Test coverage does not meet thresholds"
+  exit 1
+fi
+
+# Run security audit
+npm audit
+
+# Check for outdated dependencies
+npm outdated
+
+# Run TypeScript type check
+npx tsc --noEmit
+
+# Run ESLint
+npm run lint
+
+# Ensure main branch is protected
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+if [ "$BRANCH" = "main" ]; then
+  echo "Cannot push directly to main branch"
+  exit 1
+fi
