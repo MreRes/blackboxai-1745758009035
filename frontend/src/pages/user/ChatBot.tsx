@@ -1,47 +1,37 @@
 import { useState, useRef, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { PaperAirplaneIcon } from '@heroicons/react/24/outline';
-
-// Mock data for initial development
-const mockData = {
-  messages: [
-    {
-      id: '1',
-      content: 'Show me my recent transactions',
-      sender: 'USER',
-      timestamp: '2023-10-05T10:00:00Z',
-    },
-    {
-      id: '2',
-      content: 'Here are your recent transactions:\n\n1. Food - $25.00\n2. Transportation - $15.00\n3. Coffee - $5.00',
-      sender: 'BOT',
-      timestamp: '2023-10-05T10:00:05Z',
-    },
-    {
-      id: '3',
-      content: 'What\'s my current balance?',
-      sender: 'USER',
-      timestamp: '2023-10-05T10:01:00Z',
-    },
-    {
-      id: '4',
-      content: 'Your current balance is $3,500.00',
-      sender: 'BOT',
-      timestamp: '2023-10-05T10:01:05Z',
-    },
-  ],
-  isConnected: true,
-};
+import { whatsappApi } from '@/services/whatsappApi';
 
 export default function ChatBot() {
   const [message, setMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isTyping, setIsTyping] = useState(false);
+  const queryClient = useQueryClient();
 
-  // TODO: Replace with actual API calls
-  const { data: chat } = useQuery(['chat-history'], () =>
-    Promise.resolve(mockData)
+  // Fetch chat history from backend
+  const { data: chat, isLoading } = useQuery(['chat-history'], () =>
+    whatsappApi.getChatHistory().then(res => res.data)
+  );
+
+  // Send message mutation
+  const sendMessageMutation = useMutation(
+    (msg: string) => whatsappApi.sendMessage(msg).then(res => res.data),
+    {
+      onMutate: () => {
+        setIsTyping(true);
+      },
+      onSuccess: () => {
+        setMessage('');
+        queryClient.invalidateQueries(['chat-history']);
+        setIsTyping(false);
+      },
+      onError: () => {
+        setIsTyping(false);
+        // Handle error, e.g., show toast notification
+      },
+    }
   );
 
   const scrollToBottom = () => {
@@ -50,17 +40,17 @@ export default function ChatBot() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [chat?.messages]);
+  }, [chat]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!message.trim()) return;
-
-    // TODO: Implement message sending
-    setMessage('');
-    setIsTyping(true);
-    setTimeout(() => setIsTyping(false), 2000);
+    sendMessageMutation.mutate(message);
   };
+
+  if (isLoading) {
+    return <div>Loading chat...</div>;
+  }
 
   return (
     <div className="flex h-[calc(100vh-64px)] flex-col px-4 sm:px-6 lg:px-8">
@@ -69,7 +59,7 @@ export default function ChatBot() {
           WhatsApp Chat
         </h1>
         <p className="mt-2 text-sm text-gray-700">
-          Chat with our bot to manage your finances
+          Chat with our bot to manage your finances in Bahasa Indonesia, including formal, informal, and slang expressions.
         </p>
       </div>
 
@@ -89,7 +79,7 @@ export default function ChatBot() {
 
         <div className="flex-1 overflow-y-auto p-4 sm:p-6">
           <div className="space-y-4">
-            {chat?.messages.map((msg) => (
+            {chat?.messages.map((msg: any) => (
               <div
                 key={msg.id}
                 className={`flex ${
@@ -143,16 +133,16 @@ export default function ChatBot() {
               type="text"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder="Type a message..."
+              placeholder="Ketik pesan Anda..."
               className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6"
             />
             <button
               type="submit"
-              disabled={!message.trim()}
+              disabled={!message.trim() || sendMessageMutation.isLoading}
               className="inline-flex items-center rounded-md bg-primary-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <PaperAirplaneIcon className="h-5 w-5" />
-              <span className="sr-only">Send message</span>
+              <span className="sr-only">Kirim pesan</span>
             </button>
           </form>
         </div>
