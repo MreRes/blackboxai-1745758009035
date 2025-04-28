@@ -7,32 +7,22 @@ WORKDIR /app
 COPY package*.json ./
 COPY apps/api/package*.json ./apps/api/
 
+# Configure npm to retry on network failures
+RUN npm config set fetch-retries 5 && \
+    npm config set fetch-retry-mintimeout 2000 && \
+    npm config set fetch-retry-maxtimeout 120000
+
 # Install dependencies
 RUN npm install
 
-# Copy prisma schema and generate client
+# Copy Prisma schema and generate client
 COPY apps/api/prisma ./apps/api/prisma
 RUN cd apps/api && npx prisma generate
 
 # Copy source code
 COPY apps/api ./apps/api
 
-# Production stage
-FROM node:18-alpine
-
-WORKDIR /app
-
-# Install production dependencies
-COPY --from=builder /app/package*.json ./
-COPY --from=builder /app/apps/api/package*.json ./apps/api/
-RUN npm install --production
-
-# Copy built application
-COPY --from=builder /app/apps/api/prisma ./apps/api/prisma
-COPY --from=builder /app/apps/api/src ./apps/api/src
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-
-# Install Chrome for WhatsApp Web
+# Install Chromium for Puppeteer
 RUN apk add --no-cache \
     chromium \
     nss \
@@ -40,30 +30,21 @@ RUN apk add --no-cache \
     freetype-dev \
     harfbuzz \
     ca-certificates \
-    ttf-freefont \
-    nodejs \
-    yarn
+    ttf-freefont
 
-# Tell Puppeteer to skip installing Chrome. We'll use the installed package.
+# Set Puppeteer environment variables
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
     PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
 # Create directory for WhatsApp sessions
 RUN mkdir -p /app/whatsapp-sessions && chmod 777 /app/whatsapp-sessions
 
-# Create volume mount points
-VOLUME ["/app/whatsapp-sessions", "/app/logs"]
+# Expose port
+EXPOSE 3001
 
-# Environment variables
+# Set environment variables
 ENV NODE_ENV=production \
     PORT=3001
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD wget --quiet --tries=1 --spider http://localhost:$PORT/api/v1/health || exit 1
-
 # Start the application
 CMD ["node", "apps/api/src/index.js"]
-
-# Expose port
-EXPOSE 3001
